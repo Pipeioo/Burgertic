@@ -1,6 +1,9 @@
 const menu = require('./menu.json');
 const express = require("express");
-const app = express();
+const cors = require("cors");
+app.use(cors());
+app.use(express());
+
 
 // Ruta GET /menu que devuelve el menú completo
 app.get('/menu', (req, res) => {
