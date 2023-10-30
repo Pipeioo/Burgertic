@@ -12,7 +12,7 @@ app.get('/menu', (req, res) => {
 
 // Ruta GET para obtener el elemento con id 6 del menú
 app.get('/menu.id', (req, res) => {
-    const menuItem = menu.find(item => item.id === 6);
+    const menuItem = menu.find(item => item.id == 6);
     if (menuItem) {
         res.json(menuItem);
     } else {
@@ -21,7 +21,7 @@ app.get('/menu.id', (req, res) => {
 });
 
 app.get('/menu.combo', (req, res) => {
-    const comboItems = menu.filter(item => item.tipo === "combo");
+    const comboItems = menu.filter(item => item.tipo == "combo");
     if (comboItems.length > 0) {
         res.json(comboItems);
     } else {
@@ -30,7 +30,7 @@ app.get('/menu.combo', (req, res) => {
 });
 
 app.get('/menu.principal', (req, res) => {
-    const principalItems = menu.filter(item => item.tipo === "principal");
+    const principalItems = menu.filter(item => item.tipo == "principal");
     if (principalItems.length > 0) {
         res.json(principalItems);
     } else {
@@ -39,7 +39,7 @@ app.get('/menu.principal', (req, res) => {
 });
 
 app.get('/menu.postre', (req, res) => {
-    const postreItems = menu.filter(item => item.tipo === "postre");
+    const postreItems = menu.filter(item => item.tipo == "postre");
     if (postreItems.length > 0) {
         res.json(postreItems);
     } else {
