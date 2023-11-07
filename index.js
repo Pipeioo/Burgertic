@@ -1,9 +1,7 @@
-
-const menu = require('./menu.json')
-const express = require("express")
+const express = require('express');
+const mysql = require('mysql2')
+const app = express();
 const cors = require("cors");
-const mysql = require('mysql2');
-const app = express()
 app.use(cors());
 app.use(express.json());
 
@@ -11,8 +9,8 @@ app.use(express.json());
 const connection = mysql.createConnection({
     host: "localhost",
     user: "root",
-    password: "",
-    database: "burguertic",
+    password: "rootroot",
+    database: "burger_tic",
 });
 
 
@@ -27,9 +25,7 @@ connection.connect((err) => {
 });
 
 
-app.get('/menu', (req, res) => {
-
-
+app.get("/menu", (req, res) => {
     connection.query("SELECT * FROM platos", (err, rows) => {
         if (err) {
             console.error("Error consultando: " + err);
@@ -39,157 +35,147 @@ app.get('/menu', (req, res) => {
 
         res.json(rows);
     });
+});
 
 
-})
-app.get('/menu/:id', (req, res) => {
-    const id = req.params.id;
-
-
-    /*  res.json(menu);*/
-    connection.query("SELECT * FROM platos WHERE id = ?", [id], (err, rows) => {
+app.get("/menu/:id", (req, res) => {
+    const id = parseInt(req.params.id);
+    connection.query("SELECT * FROM platos WHERE id=?", [id], (err, rows) => {
         if (err) {
             console.error("Error consultando: " + err);
             return;
         }
-
-
-        res.json(rows);
+        if (rows.length === 0) {
+            res.status(404).json({ msg: 'Plato no encontrado' });
+        }
+        else {
+            res.json(rows[0]);
+        }
     });
-})
-app.get('/combos', (req, res) => {
+});
 
 
+app.get("/combos", (req, res) => {
     connection.query("SELECT * FROM platos WHERE tipo = 'combo'", (err, rows) => {
         if (err) {
             console.error("Error consultando: " + err);
             return;
         }
-
-
-        res.json(rows);
+        else {
+            res.json(rows);
+        }
     });
 })
-app.get('/principales', (req, res) => {
+
+
+app.get("/principales", (req, res) => {
     connection.query("SELECT * FROM platos WHERE tipo = 'principal'", (err, rows) => {
         if (err) {
             console.error("Error consultando: " + err);
             return;
         }
-
-
-        res.json(rows);
+        else {
+            res.json(rows);
+        }
     });
-})
-app.get('/postres', (req, res) => {
+});
+
+
+app.get("/postres", (req, res) => {
     connection.query("SELECT * FROM platos WHERE tipo = 'postre'", (err, rows) => {
         if (err) {
             console.error("Error consultando: " + err);
             return;
         }
-
-
-        res.json(rows);
+        else {
+            res.json(rows);
+        }
     });
-})
-app.post('/pedido', (req, res) => {
-    const pedido = req.body.productos; // Obtiene los productos del cuerpo de la solicitud
+});
 
 
-    // Realiza tu consulta SQL para crear el pedido
-    const pedidoQuery = "INSERT INTO pedidos (fecha, estado, id_usuario) VALUES (?, 'pendiente', ?)";
-
-
-    connection.query(pedidoQuery, [new Date(), 1], (err, result) => {
+app.post("/pedido", async (req, res) => {
+    const pedido = req.body;
+    let precio = 0;
+    if (!pedido.productos) return res.status(404).json({ msg: 'Su pedido está vacio' });
+    if (pedido.productos.length == 0) return res.status(404).json({ msg: 'No agregó productos' });
+    connection.query("INSERT INTO pedidos (id_usuario, fecha, estado) VALUES (1,'" + new Date().toISOString() + "','pendiente' )", (err, result) => {
         if (err) {
-            console.error("Error al insertar el pedido: " + err);
-
-
+            console.error("Error consultando: " + err);
+            return;
         } else {
-
-
-
-
             const id_pedido = result.insertId;
+            let insert = "INSERT INTO pedidos_platos (id_pedido, id_plato, cantidad) VALUES ";
+            let argumentos = [];
+            pedido.productos.forEach((plato, i) => {
+                insert += "(?, ?, ?)";
+                argumentos.push(id_pedido, plato.id, plato.cantidad)
+                if (i !== pedido.productos.length - 1) {
+                    insert += ", ";
+                }
 
 
-            pedido.forEach(producto => {
-                const productoQuery = "INSERT INTO pedidos_platos (id_pedido, id_plato, cantidad) VALUES (?, ?, ?)";
-                connection.query(productoQuery, [id_pedido, producto.id, producto.cantidad], (err, result) => {
-                    if (err) {
-                        console.error("Error al insertar el producto en el pedido: " + err);
-                        res.status(500).send("Error al insertar el producto en el pedido");
-                    }
-                });
+            })
+            connection.query(insert, argumentos, (err, result) => {
+                if (err) {
+                    console.error("Error consultando: " + err);
+                    return;
+                }
+                else {
+                    res.status(200).json({ msg: 'todo bien' });
+                }
             });
+        }
+    });
 
 
-            console.log("Pedido y productos creados con éxito.");
+
+
+
+
+});
+
+
+app.get("/pedidos/:id", (req, res) => {
+    const id = req.params.id;
+    connection.query("SELECT pedidos.*, platos.*, pedidos_platos.id_pedido, pedidos_platos.cantidad FROM pedidos INNER JOIN pedidos_platos ON pedidos.id = pedidos_platos.id_pedido INNER JOIN platos ON pedidos_platos.id_plato=platos.id WHERE pedidos.id_usuario=?", id, (err, rows) => {
+        if (err) {
+            console.error("Error consultando: " + err);
+            return;
+        }
+        else {
+            let pedidos = []
+            rows.forEach((row) => {
+                if (!pedidos.find((p) => p.id === row.id_pedido)){
+                    pedidos.push({
+                        "id": row.id_pedido,
+                        "fecha": row.fecha,
+                        "estado": row.estado,
+                        "id_usuario": row.id_usuario,
+                        "platos": [
+                            {
+                                "id": row.id,
+                                "nombre": row.nombre,
+                                "precio": row.precio,
+                                "cantidad": row.cantidad
+                            }
+                        ]
+                    })
+                } else {
+                    const newPedido = pedidos.find((p) => p.id === row.id_pedido);
+                    newPedido.platos.push({
+                        "id": row.id,
+                        "nombre": row.nombre,
+                        "precio": row.precio,
+                        "cantidad": row.cantidad});
+                    pedidos = pedidos.filter((p) => p.id !== row.id_pedido);
+                    pedidos.push(newPedido);
+                }
+            });
+            res.json(pedidos);
         }
     });
 });
 
 
-app.get('/pedidos/:id', (req, res) => {
-    const usuarioID = req.params.id;
-    connection.query(
-        "SELECT p.id AS pedido_id, p.fecha, p.estado, p.id_usuario, pp.id AS pedido_plato_id, pp.cantidad, plato.id AS plato_id, plato.nombre AS plato_nombre, plato.precio " +
-        "FROM pedidos p " +
-        "INNER JOIN pedidos_platos pp ON p.id = pp.id_pedido " +
-        "INNER JOIN platos plato ON pp.id_plato = plato.id " +
-        "WHERE p.id_usuario = ?",
-        [usuarioID],
-        (err, results) => {
-            if (err) {
-                console.error("Error consultando: " + err);
-                return res.status(500).send("Error interno del servidor");
-            }
-            if (results.length === 0) {
-                return res.status(404).send("El usuario no tiene platos ni pedidos");
-            }
-
-
-            const pedidosDetalles = {};
-
-
-            results.forEach(row => {
-                const pedidoId = row.pedido_id;
-                if (!pedidosDetalles[pedidoId]) {
-                    pedidosDetalles[pedidoId] = {
-                        id: pedidoId,
-                        fecha: row.fecha,
-                        estado: row.estado,
-                        id_usuario: row.id_usuario,
-                        platos: []
-                    };
-                }
-                pedidosDetalles[pedidoId].platos.push({
-                    id: row.plato_id,
-                    nombre: row.plato_nombre,
-                    precio: row.precio,
-                    cantidad: row.cantidad,
-                    pedido_plato_id: row.pedido_plato_id
-                });
-            });
-
-
-            const pedidosArray = Object.values(pedidosDetalles);
-
-
-            res.json(pedidosArray);
-        }
-    );
-});
-
-app.listen(3000, () => {
-    console.log("Example app is running on port 3000");
-})
-
-
-
-
-
-
-
-
-
+app.listen(9000, () => console.log("API running on port 3000"));
