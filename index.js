@@ -1,15 +1,15 @@
 const express = require('express');
 const mysql = require('mysql2');
 const app = express();
+const menu = require('./menu.json');
 const cors = require("cors");
 app.use(cors());
 app.use(express.json());
 
-
 const connection = mysql.createConnection({
     host: "localhost",
     user: "root",
-    password: "rootroot",
+    password: "",
     database: "burger_tic",
 });
 
@@ -19,11 +19,19 @@ connection.connect((err) => {
         console.error("Error conectándose: " + err);
         return;
     }
-
-
+    
+    
     console.log("Base de datos conectada");
 });
 
+/* menu.forEach(plato => {
+    connection.query("INSERT INTO platos (id, tipo, nombre, precio, descripcion) VALUES ('"+plato.id+"','"+plato.tipo+"','"+plato.nombre+"','"+plato.precio+"','"+plato.descripcion+"')", (err, rows) => {
+        if (err) {
+            console.error("Error consultando: " + err);
+            return;
+        }
+    });
+}); 
 
 app.get("/menu", (req, res) => {
     connection.query("SELECT * FROM platos", (err, rows) => {
@@ -36,7 +44,7 @@ app.get("/menu", (req, res) => {
         res.json(rows);
     });
 });
-
+*/
 
 app.get("/menu/:id", (req, res) => {
     const id = parseInt(req.params.id);
@@ -178,4 +186,4 @@ app.get("/pedidos/:id", (req, res) => {
 });
 
 
-app.listen(9000, () => console.log("API running on port 3000"));
+app.listen(3000, () => console.log("API running on port 3000"));

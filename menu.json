@@ -102,7 +102,7 @@
         "tipo": "principal",
         "nombre": "SQL",
         "precio": 2500,
-        "descripcion": "Salsa, Queso y Lomito. No vas a encontrar un lomito más rico que este, ni aunque hagas un 'select * from lomitos'"
+        "descripcion": "Salsa, Queso y Lomito. No vas a encontrar un lomito más rico que este, ni aunque hagas un "
     },
     {
         "id": 16,
