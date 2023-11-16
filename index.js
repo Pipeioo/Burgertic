@@ -4,7 +4,7 @@ const app = express();
 const menu = require('./menu.json');
 const cors = require("cors");
 app.use(cors());
-app.use(express.json());
+app.use(express());
 
 const connection = mysql.createConnection({
     host: "localhost",
